@@ -1,0 +1,78 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String     @id @default(uuid())
+  email         String     @unique
+  createdAt     DateTime   @default(now())
+  isEmailVerified Boolean  @default(false)
+  sessions      Session[]
+  credits       Credit[]
+  purchases     Purchase[]
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  device    String?
+}
+
+model Credit {
+  id        String   @id @default(uuid())
+  userId    String
+  change    Int      // + or - credits
+  balance   Int      // balance after this ledger row
+  reason    String
+  meta      Json?
+  createdAt DateTime @default(now())
+}
+
+model CreditPack {
+  id        String  @id @default(uuid())
+  name      String
+  credits   Int
+  priceINR  Int
+  createdAt DateTime @default(now())
+  active    Boolean @default(true)
+}
+
+model Purchase {
+  id            String   @id @default(uuid())
+  userId        String
+  razorpayOrderId String @unique
+  razorpayPaymentId String? @unique
+  packId        String
+  amount        Int
+  currency      String @default("INR")
+  status        String // created, paid, refunded, failed
+  meta          Json?
+  createdAt     DateTime @default(now())
+}
+
+model PredictionRequest {
+  id          String   @id @default(uuid())
+  userId      String
+  symbol      String
+  creditsUsed Int
+  result      Json?
+  status      String   // pending, success, failed, refunded
+  createdAt   DateTime @default(now())
+  completedAt DateTime?
+}
+
+model ModelEvaluation {
+  id        String   @id @default(uuid())
+  modelTag  String
+  createdAt DateTime @default(now())
+  metrics   Json
+  notes     String?
+}
