@@ -1,6 +1,6 @@
 {
   "name": "dhru.ltd",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -26,7 +26,8 @@
     "swr": "^2.1.0",
     "framer-motion": "^10.12.16",
     "clsx": "^1.2.1",
-    "nodemailer": "^6.9.4"
+    "nodemailer": "^6.9.4",
+    "jsonwebtoken": "^9.0.0"
   },
   "devDependencies": {
     "typescript": "^5.1.6",

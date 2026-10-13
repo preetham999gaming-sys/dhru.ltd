@@ -10,12 +10,13 @@ datasource db {
 model User {
   id            String     @id @default(uuid())
   email         String     @unique
+  passwordHash  String
+  mobile        String?    @unique
   createdAt     DateTime   @default(now())
   isEmailVerified Boolean  @default(false)
   sessions      Session[]
   credits       Credit[]
   purchases     Purchase[]
-  otps          Otp[]
 }
 
 model Session {
@@ -25,13 +26,6 @@ model Session {
   createdAt DateTime @default(now())
   expiresAt DateTime
   device    String?
-}
-
-model Otp {
-  id        String   @id
-  userId    String
-  otp       String
-  expiresAt DateTime
 }
 
 model Credit {
