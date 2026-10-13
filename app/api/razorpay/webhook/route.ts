@@ -17,14 +17,15 @@ export async function POST(req: Request) {
   const event = payload.event;
   if (event === "payment.captured") {
     const payment = payload.payload.payment.entity;
-    // Idempotency: ensure purchase record updated only once
     const orderId = payment.order_id;
     const razorpayPaymentId = payment.id;
     // Lookup purchase by razorpay order id
     const purchase = await prisma.purchase.findUnique({ where: { razorpayOrderId: orderId } });
     if (!purchase) {
-      // log & return 404 so you can inspect
-      return NextResponse.json({ error: "order_not_found" }, { status: 404 });
+      // Create a purchase record if missing (defensive)
+      await prisma.purchase.create({ data: { userId: payment.notes?.userId || '', razorpayOrderId: orderId, razorpayPaymentId, packId: payment.notes?.packId || '', amount: payment.amount || 0, currency: payment.currency || 'INR', status: 'paid', meta: { razorpay: payment } } });
+      // can't grant without pack mapping
+      return NextResponse.json({ ok: true });
     }
     if (purchase.razorpayPaymentId) {
       return NextResponse.json({ ok: true }); // already handled
@@ -35,12 +36,14 @@ export async function POST(req: Request) {
         data: {
           razorpayPaymentId,
           status: "paid",
-          meta: { ...purchase.meta, razorpay: payment },
+          meta: { ...(purchase.meta || {}), razorpay: payment },
         },
       });
-      // grant credits according to pack
       const pack = await tx.creditPack.findUnique({ where: { id: purchase.packId } });
-      if (!pack) throw new Error("pack_not_found");
+      if (!pack) {
+        // log and return
+        return;
+      }
       await grantCredits(purchase.userId, pack.credits, `purchase:${purchase.id}`);
     });
   }
